@@ -113,4 +113,4 @@ pool.Leave() // Signal that we're done with the pool
 
 ## License
 
-[License information]
+Provided under the GPL2.0 license.
