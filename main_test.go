@@ -1,4 +1,4 @@
-// Package threadqueue provides a thread pool implementation for managing
+// Package threadqueue provides a thread Queue implementation for managing
 // concurrent goroutines in Go applications.
 package threadqueue
 
@@ -10,36 +10,36 @@ import (
 	"time"
 )
 
-// TestThreadPoolBasic verifies that a new ThreadPool is initialized correctly
+// TestThreadQueueBasic verifies that a new ThreadQueue is initialized correctly
 // with the expected default values.
-func TestThreadPoolBasic(t *testing.T) {
-	// Create a new thread pool with max 2 threads
-	pool := New(2)
+func TestThreadQueueBasic(t *testing.T) {
+	// Create a new thread Queue with max 2 threads
+	Queue := New(2)
 	
-	// Test that the pool is initialized correctly
-	if pool.max != 2 {
-		t.Errorf("Expected max to be 2, got %d", pool.max)
+	// Test that the Queue is initialized correctly
+	if Queue.max != 2 {
+		t.Errorf("Expected max to be 2, got %d", Queue.max)
 	}
 	
-	if pool.current != 0 {
-		t.Errorf("Expected current to be 0, got %d", pool.current)
+	if Queue.current != 0 {
+		t.Errorf("Expected current to be 0, got %d", Queue.current)
 	}
 	
-	if pool.In == nil {
+	if Queue.In == nil {
 		t.Error("Expected In channel to be initialized")
 	}
 	
-	if pool.cond == nil {
+	if Queue.cond == nil {
 		t.Error("Expected condition variable to be initialized")
 	}
 }
 
-// TestThreadPoolJoinLeave tests the core functionality of the ThreadPool:
-// joining and leaving the pool while respecting the maximum concurrency limit.
+// TestThreadQueueJoinLeave tests the core functionality of the ThreadQueue:
+// joining and leaving the Queue while respecting the maximum concurrency limit.
 // It verifies that no more than the maximum number of goroutines run concurrently.
-func TestThreadPoolJoinLeave(t *testing.T) {
-	// Create a new thread pool with max 2 threads
-	pool := New(2)
+func TestThreadQueueJoinLeave(t *testing.T) {
+	// Create a new thread Queue with max 2 threads
+	Queue := New(2)
 	
 	// Test Join and Leave
 	var counter int32 = 0
@@ -53,9 +53,9 @@ func TestThreadPoolJoinLeave(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			
-			// Join the pool (blocks until a slot is available)
-			pool.Join()
-			defer pool.Leave()
+			// Join the Queue (blocks until a slot is available)
+			Queue.Join()
+			defer Queue.Leave()
 			
 			// Increment counter
 			atomic.AddInt32(&counter, 1)
@@ -78,22 +78,22 @@ func TestThreadPoolJoinLeave(t *testing.T) {
 	wg.Wait()
 }
 
-// TestThreadPoolConcurrency tests the ThreadPool with different pool sizes
-// to verify that the maximum concurrency is respected and that the pool
+// TestThreadQueueConcurrency tests the ThreadQueue with different Queue sizes
+// to verify that the maximum concurrency is respected and that the Queue
 // efficiently utilizes available slots. It runs multiple subtests with
-// different pool sizes.
-func TestThreadPoolConcurrency(t *testing.T) {
-	// Test with different pool sizes
+// different Queue sizes.
+func TestThreadQueueConcurrency(t *testing.T) {
+	// Test with different Queue sizes
 	testSizes := []int{1, 5, 10, 20}
 	
 	for _, size := range testSizes {
-		t.Run("PoolSize_"+strconv.Itoa(size), func(t *testing.T) {
-			pool := New(size)
+		t.Run("QueueSize_"+strconv.Itoa(size), func(t *testing.T) {
+			Queue := New(size)
 			
-			// Number of tasks to run (more than pool size)
+			// Number of tasks to run (more than Queue size)
 			taskCount := size * 3
 			if size == 1 {
-				// For pool size 1, use a smaller number of tasks to avoid overwhelming the pool
+				// For Queue size 1, use a smaller number of tasks to avoid overwhelming the Queue
 				taskCount = 3
 			}
 			
@@ -107,7 +107,7 @@ func TestThreadPoolConcurrency(t *testing.T) {
 			// Use a done channel to signal test completion
 			done := make(chan struct{})
 			
-			// For pool size 1, we need to ensure we have enough time to record concurrency
+			// For Queue size 1, we need to ensure we have enough time to record concurrency
 			workDuration := 50 * time.Millisecond
 			if size == 1 {
 				workDuration = 200 * time.Millisecond // Longer duration for size 1 to ensure we capture concurrency
@@ -118,11 +118,11 @@ func TestThreadPoolConcurrency(t *testing.T) {
 				go func(id int) {
 					defer wg.Done()
 					
-					// Join the pool (blocks until a slot is available)
-					pool.Join()
+					// Join the Queue (blocks until a slot is available)
+					Queue.Join()
 					
-					// Ensure we leave the pool when done
-					defer pool.Leave()
+					// Ensure we leave the Queue when done
+					defer Queue.Leave()
 					
 					// Increment and track concurrency
 					current := atomic.AddInt32(&currentConcurrent, 1)
@@ -165,39 +165,39 @@ func TestThreadPoolConcurrency(t *testing.T) {
 				t.Fatal("Test timed out waiting for all tasks to complete")
 			}
 			
-			// Verify max concurrency never exceeded pool size
+			// Verify max concurrency never exceeded Queue size
 			if int(maxConcurrent) > size {
-				t.Errorf("Max concurrency (%d) exceeded pool size (%d)", maxConcurrent, size)
+				t.Errorf("Max concurrency (%d) exceeded Queue size (%d)", maxConcurrent, size)
 			}
 			
-			// For pool size 1, we know exactly what the max should be
+			// For Queue size 1, we know exactly what the max should be
 			if size == 1 {
 				if maxConcurrent != 1 {
-					t.Errorf("For pool size 1, max concurrency should be exactly 1, got %d", maxConcurrent)
+					t.Errorf("For Queue size 1, max concurrency should be exactly 1, got %d", maxConcurrent)
 				}
 			} else {
-				// For larger pools, verify max concurrency reached pool size (or close to it)
+				// For larger Queues, verify max concurrency reached Queue size (or close to it)
 				if int(maxConcurrent) < size-1 && size > 1 {
-					t.Errorf("Max concurrency (%d) didn't reach close to pool size (%d)", maxConcurrent, size)
+					t.Errorf("Max concurrency (%d) didn't reach close to Queue size (%d)", maxConcurrent, size)
 				}
 			}
 			
-			t.Logf("Pool size %d: max concurrency was %d", size, maxConcurrent)
+			t.Logf("Queue size %d: max concurrency was %d", size, maxConcurrent)
 		})
 	}
 }
 
-// TestThreadPoolStress runs a stress test on the ThreadPool by launching
+// TestThreadQueueStress runs a stress test on the ThreadQueue by launching
 // a large number of short-lived goroutines. This test is skipped when
-// running in short mode. It verifies that the pool can handle a high
+// running in short mode. It verifies that the Queue can handle a high
 // volume of join/leave operations without errors.
-func TestThreadPoolStress(t *testing.T) {
+func TestThreadQueueStress(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping stress test in short mode")
 	}
 	
-	// Create a pool with moderate size
-	pool := New(50)
+	// Create a Queue with moderate size
+	Queue := New(50)
 	
 	// Launch a large number of short-lived goroutines
 	var wg sync.WaitGroup
@@ -214,9 +214,9 @@ func TestThreadPoolStress(t *testing.T) {
 		go func(id int) {
 			defer wg.Done()
 			
-			// Join the pool
-			pool.Join()
-			defer pool.Leave()
+			// Join the Queue
+			Queue.Join()
+			defer Queue.Leave()
 			
 			// Very short task
 			time.Sleep(1 * time.Millisecond)
@@ -228,7 +228,7 @@ func TestThreadPoolStress(t *testing.T) {
 	
 	// Check duration
 	duration := time.Since(startTime)
-	t.Logf("Completed %d tasks in %v with pool size 50", taskCount, duration)
+	t.Logf("Completed %d tasks in %v with Queue size 50", taskCount, duration)
 	
 	// Check for errors
 	if errorCount > 0 {
@@ -236,21 +236,21 @@ func TestThreadPoolStress(t *testing.T) {
 	}
 }
 
-// BenchmarkThreadPool benchmarks the performance of the ThreadPool with
-// different pool sizes. It measures how quickly the pool can process
+// BenchmarkThreadQueue benchmarks the performance of the ThreadQueue with
+// different Queue sizes. It measures how quickly the Queue can process
 // a large number of short-lived goroutines.
-func BenchmarkThreadPool(b *testing.B) {
-	// Benchmark different pool sizes
-	poolSizes := []int{1, 10, 100}
+func BenchmarkThreadQueue(b *testing.B) {
+	// Benchmark different Queue sizes
+	QueueSizes := []int{1, 10, 100}
 	
-	for _, size := range poolSizes {
-		b.Run("PoolSize_"+string(rune(size+'0')), func(b *testing.B) {
-			pool := New(size)
+	for _, size := range QueueSizes {
+		b.Run("QueueSize_"+string(rune(size+'0')), func(b *testing.B) {
+			Queue := New(size)
 			
 			// Reset the timer before the actual benchmark work
 			b.ResetTimer()
 			
-			// Create a fixed number of worker goroutines based on the pool size
+			// Create a fixed number of worker goroutines based on the Queue size
 			// to avoid creating too many goroutines
 			workers := size * 2
 			tasks := make(chan int, b.N)
@@ -265,10 +265,10 @@ func BenchmarkThreadPool(b *testing.B) {
 					
 					// Process tasks until the channel is closed
 					for range tasks {
-						pool.Join()
+						Queue.Join()
 						// Minimal work
 						time.Sleep(1 * time.Microsecond)
-						pool.Leave()
+						Queue.Leave()
 					}
 				}()
 			}

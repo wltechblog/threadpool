@@ -4,7 +4,7 @@ A simple and effective way to manage running lots of goroutines in your Go softw
 
 ## Overview
 
-ThreadQueue provides a thread pool implementation for Go that limits the number of concurrently running goroutines. This helps prevent resource exhaustion when dealing with a large number of concurrent tasks.
+ThreadQueue provides a thread Queue implementation for Go that limits the number of concurrently running goroutines. This helps prevent resource exhaustion when dealing with a large number of concurrent tasks.
 
 ## Installation
 
@@ -28,8 +28,8 @@ import (
 )
 
 func main() {
-    // Create a new thread pool with a maximum of 5 concurrent goroutines
-    pool := threadqueue.New(5)
+    // Create a new thread Queue with a maximum of 5 concurrent goroutines
+    Queue := threadqueue.New(5)
 
     var wg sync.WaitGroup
 
@@ -39,9 +39,9 @@ func main() {
         go func(id int) {
             defer wg.Done()
 
-            // Join the pool (blocks until a slot is available)
-            pool.Join()
-            defer pool.Leave()
+            // Join the Queue (blocks until a slot is available)
+            Queue.Join()
+            defer Queue.Leave()
 
             // Do some work
             fmt.Printf("Worker %d is running\n", id)
@@ -59,8 +59,8 @@ func main() {
 1. Always call `Leave()` after `Join()`, preferably using `defer`:
 
 ```go
-pool.Join()
-defer pool.Leave()
+Queue.Join()
+defer Queue.Leave()
 ```
 
 2. Use a wait group to ensure all goroutines complete before your program exits:
@@ -72,8 +72,8 @@ wg.Add(numTasks)
 for i := 0; i < numTasks; i++ {
     go func() {
         defer wg.Done()
-        pool.Join()
-        defer pool.Leave()
+        Queue.Join()
+        defer Queue.Leave()
         // Do work
     }()
 }
@@ -81,34 +81,34 @@ for i := 0; i < numTasks; i++ {
 wg.Wait()
 ```
 
-3. Choose an appropriate pool size based on your system resources and the nature of your tasks:
+3. Choose an appropriate Queue size based on your system resources and the nature of your tasks:
    - CPU-bound tasks: typically use `runtime.NumCPU()` or slightly higher
    - I/O-bound tasks: can use a higher number as these tasks spend time waiting
 
 ## API Reference
 
-### New(max int) *ThreadPool
+### New(max int) *ThreadQueue
 
-Creates a new thread pool with the specified maximum number of concurrent goroutines.
+Creates a new thread Queue with the specified maximum number of concurrent goroutines.
 
 ```go
-pool := threadqueue.New(10) // Create a pool with max 10 concurrent goroutines
+Queue := threadqueue.New(10) // Create a Queue with max 10 concurrent goroutines
 ```
 
 ### Join()
 
-Blocks until the calling goroutine can enter the thread pool. If the pool is at capacity, the goroutine will wait until another goroutine leaves.
+Blocks until the calling goroutine can enter the thread Queue. If the Queue is at capacity, the goroutine will wait until another goroutine leaves.
 
 ```go
-pool.Join() // Wait until we can enter the pool
+Queue.Join() // Wait until we can enter the Queue
 ```
 
 ### Leave()
 
-Notifies the pool that the calling goroutine has completed its work and is exiting the pool. This frees up a slot for another waiting goroutine.
+Notifies the Queue that the calling goroutine has completed its work and is exiting the Queue. This frees up a slot for another waiting goroutine.
 
 ```go
-pool.Leave() // Signal that we're done with the pool
+Queue.Leave() // Signal that we're done with the Queue
 ```
 
 ## License
