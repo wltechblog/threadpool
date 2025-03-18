@@ -1,4 +1,4 @@
-module github.com/wltechblog/threadqueue
+module github.com/wltechblog/threadpool
 
 go 1.24.1
 
